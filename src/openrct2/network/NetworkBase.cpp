@@ -1426,7 +1426,7 @@ uint8_t* NetworkBase::save_for_network(size_t& out_size, const std::vector<const
     bool RLEState = gUseRLE;
     gUseRLE = false;
 
-    auto ms = MemoryStream();
+    auto ms = OpenRCT2::MemoryStream();
     if (!SaveMap(&ms, objects))
     {
         log_warning("Failed to export map.");
@@ -2283,7 +2283,7 @@ void NetworkBase::Client_Handle_AUTH(NetworkConnection& connection, NetworkPacke
             connection.Socket->Disconnect();
             break;
         default:
-            connection.SetLastDisconnectReason(STR_MULTIPLAYER_INCORRECT_SOFTWARE_VERSION);
+            connection.SetLastDisconnectReason(STR_MULTIPLAYER_RECEIVED_INVALID_DATA);
             connection.Socket->Disconnect();
             break;
     }
@@ -2723,6 +2723,11 @@ void NetworkBase::Client_Handle_MAP([[maybe_unused]] NetworkConnection& connecti
 
             // Fix invalid vehicle sprite sizes, thus preventing visual corruption of sprites
             fix_invalid_vehicle_sprite_sizes();
+
+            // NOTE: Game actions are normally processed before processing the player list.
+            // Given that during map load game actions are buffered we have to process the
+            // player list first to have valid players for the queued game actions.
+            ProcessPlayerList();
         }
         else
         {
